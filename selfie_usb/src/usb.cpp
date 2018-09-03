@@ -1,3 +1,13 @@
+#include "usb.hpp"
+
+int USB_STM::test(uint32_t val){
+	val++;
+	if(val>100)
+		val = 0;
+	
+	return val;
+}
+
 USB_STM::USB_STM()
 {
 
@@ -9,15 +19,16 @@ int USB_STM::init(int speed)
 {
     // Try openning ports from ttyACM0 to ttyACM9
 
-    for(int i = 48; i < 58; i++)
+    for(int i = 48; i < 49; i++)
     {
-        portname[11] = i;
-        fd = open(&portname[0], O_RDWR | O_NOCTTY | O_SYNC);
+        //portname[11] = i;
+	char port[] = "/dev/ttyACM0";
+        fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
         if (fd < 0)
-            std::cout << "Could not open serial communication on port: " << portname << std::endl;
+            std::cout << "Could not open serial communication on port: " << port << std::endl;
         else
         {
-            std::cout << "Opened serial communication on port: " << portname << std::endl;
+            std::cout << "Opened serial communication on port: " << port << std::endl;
             std::cout << "File descriptor: " << fd << std::endl;
             break;
         }
@@ -144,6 +155,36 @@ void USB_STM::read_buf(int buf_size,float& velocity, uint16_t &tf_mini,uint8_t &
     }
 }
 
+void USB_STM::read_buffer(int buf_size,float& imu_angle)
+{
+    unsigned char buf[buf_size];
+    int read_state = read(fd, &buf, buf_size) ;
+
+
+    if(read_state>0)
+    {   // std::cout << "Len: " << read_state<< std::endl;
+        //for(int i = 0; i < buf_size; i++)
+        //{
+            //std::cout << (int)buf[i]<<"\t";
+        //}
+    //4 byte --> float union
+    union
+    {
+        float f;
+        unsigned char b[4];
+    }u;
+
+     u.b[0]=buf[0];
+     u.b[1]=buf[1];
+     u.b[2]=buf[2];
+     u.b[3]=buf[3];
+
+     //car velocity
+     imu_angle_from_stm = u.f;
+    }
+}
+
+
 void USB_STM::data_pack(uint32_t velo,uint32_t ang,std::vector<uint32_t>flags,data_container *container)
 {
     unsigned char char_flags[4]; //convert uint32_flags to unsigned char
@@ -175,5 +216,6 @@ void USB_STM::data_pack(uint32_t velo,uint32_t ang,std::vector<uint32_t>flags,da
     for(int i=0;i<4;i++){
         container->data[i+12] = pom[i];
     }
+
 
 }
