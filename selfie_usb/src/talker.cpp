@@ -58,14 +58,25 @@ int main(int argc, char **argv){
 
    //usb communication
    data_container to_send;
-   float imu_angle;
-   uint32_t velocity = 1;
    uint32_t angle; 
+   uint32_t velocity = 11;
    uint32_t angle_to_send = 0;
    std::vector<uint32_t>usb_from_vision(5);
    for(int i=0;i<5;i++){
             usb_from_vision[i]=i;
    }
+   float imu_angle;
+   float car_velocity = 2;
+   uint16_t tf_mini = 2;
+   uint8_t usb_taranis_3_pos = 2;
+   uint8_t usb_taranis_reset_gear = 2;
+   uint8_t usb_stm_reset=2;
+   uint8_t usb_lights =2;
+   uint16_t taranis_3_pos = 2;
+   uint16_t taranis_reset_gear = 2;
+   uint16_t stm_reset=2;
+   uint16_t lights =2;
+
 
 
    //usb receive data
@@ -76,16 +87,23 @@ int main(int argc, char **argv){
       * This is a message object. You stuff it with data, and then publish it.
       */
       
-      //Usb.data_pack(velocity,angle_to_send,usb_from_vision,&to_send);
-      //Usb.send_buf(to_send);
-      Usb.read_buffer(4,imu_angle);
+      Usb.data_pack(velocity,angle_to_send,usb_from_vision,&to_send);
+      Usb.send_buf(to_send);
+      //Usb.read_buffer(4,imu_angle);
+      Usb.read_buf(14,car_velocity, tf_mini,usb_taranis_3_pos, usb_taranis_reset_gear, usb_stm_reset,usb_lights);
+      taranis_3_pos = usb_taranis_3_pos;
+      taranis_reset_gear = usb_taranis_reset_gear;
+      stm_reset = usb_stm_reset;
+      lights = usb_lights;
+      
       //angle_to_send = Usb.test(angle_to_send);
 
       std_msgs::String msg;
   
       std::stringstream ss;
       //ss << "send"<<angle_to_send;
-      ss << "receive: "<<Usb.imu_angle_from_stm;
+      //ss << "receive: "<<Usb.imu_angle_from_stm;
+      ss << "Receive:" <<"VEL:"<<car_velocity<<" tf:"<<tf_mini<<" 3_POS: "<<taranis_3_pos<<" RES: "<<taranis_reset_gear<<" STM_RES: "<<stm_reset<<" L: "<<lights;
       msg.data = ss.str();
   
       ROS_INFO("%s", msg.data.c_str());

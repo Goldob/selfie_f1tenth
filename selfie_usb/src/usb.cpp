@@ -117,7 +117,7 @@ void USB_STM::send_buf(data_container &to_send)
 }
 
 
-void USB_STM::read_buf(int buf_size,float& velocity, uint16_t &tf_mini,uint8_t &taranis_3_pos,uint8_t &taranis_reset_gear,uint8_t& stm_reset,uint8_t& lights)
+void USB_STM::read_buf(int buf_size,float& velocity, uint16_t& tf_mini,uint8_t& taranis_3_pos,uint8_t& taranis_reset_gear,uint8_t& stm_reset,uint8_t& lights)
 {
     unsigned char buf[buf_size];
     int read_state = read(fd, &buf, buf_size) ;
