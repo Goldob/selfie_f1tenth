@@ -1,5 +1,8 @@
 # Selfie F1/10 Project
 
+[![Build Status](https://travis-ci.com/Goldob/selfie_f1tenth.svg?token=PJsofUnpisMA7tRvqt4p&branch=master)](https://travis-ci.com/Goldob/selfie_f1tenth)
+[![codecov](https://codecov.io/gh/Goldob/selfie_f1tenth/branch/master/graph/badge.svg?token=BL6hzoYe9L)](https://codecov.io/gh/Goldob/selfie_f1tenth)
+
 This repository contains a collection of ROS packages specific to implementation of the Selfie Autonomous Car for [F1/10](http://f1tenth.org) October 2018 competition. It is targetting [ROS Kinetic Kame](http://wiki.ros.org/kinetic) distribution.
 
 ## Workspace setup
