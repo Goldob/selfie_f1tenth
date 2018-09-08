@@ -203,4 +203,4 @@ include_directories(
 
 add_executable(selfie_odometry src/selfie_odometry.cpp)
 target_link_libraries(selfie_odometry ${catkin_LIBRARIES})
-add_dependencies(listener selfie_odometry_generate_messages_cpp)
+add_dependencies(selfie_odometry selfie_odometry_generate_messages_cpp)
