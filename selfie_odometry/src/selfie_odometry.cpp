@@ -6,13 +6,15 @@
 
 float speed=0.0;
 
+double roll,pitch,yaw=0.0;
+
 double x = 0.0;
 double y = 0.0;
-double th = 0.0;
+//double th = 0.0;
 
-double vx = 0;
-double vy = 0;
-double vth = 0;
+double vx = 0.0;
+double vy = 0.0;
+double vth = 0.0;
 
 void speedCallback(const std_msgs::Float32 &msg){
   speed=msg.data;
@@ -20,8 +22,18 @@ void speedCallback(const std_msgs::Float32 &msg){
 
 void imuCallback(const sensor_msgs::Imu &msg){
   vth=msg.angular_velocity.z;
-  vx=msg.orientation.z*cos(th);
-  vy=msg.orientation.z*sin(th);
+
+  tf::Quaternion q(
+  msg.orientation.x,
+  msg.orientation.y,
+  msg.orientation.z,
+  msg.orientation.w);
+
+  tf::Matrix3x3 m(q);
+  m.getRPY(roll,pitch,yaw);
+
+  vx=speed*cos(yaw);
+  vy=speed*sin(yaw);
 }
 
 
@@ -50,14 +62,14 @@ int main(int argc, char** argv){
     double dt = (current_time - last_time).toSec();
     double delta_x = vx * dt;
     double delta_y = vy * dt;
-    double delta_th = vth * dt;
+    //double delta_th = vth * dt;
 
     x += delta_x;
     y += delta_y;
-    th += delta_th;
+    //th += delta_th;
 
     //quaternion created from yaw
-    geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(th);
+    geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(yaw);
 
     //publish the transform over tf
     geometry_msgs::TransformStamped odom_trans;
