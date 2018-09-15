@@ -38,11 +38,11 @@ class Ackermann_control
 {
 public:
   data_container commands;
-  int16_t steering_angle;
-  int16_t steering_angle_velocity;
-  int16_t speed;
-  int16_t acceleration;
-  int16_t jerk;
+  float steering_angle;
+  float steering_angle_velocity;
+  float speed;
+  float acceleration;
+  float jerk;
 };
 
 class USB_STM
@@ -54,7 +54,7 @@ public:
   usb_command command;
   int init(int speed = B115200);
   void usb_read_buffer(int buf_size, uint32_t& timestamp,int32_t& distance, int16_t& velocity, int16_t& quaternion_x, int16_t& quaternion_y, int16_t& quaternion_z, int16_t& quaternion_w, uint16_t yaw, int16_t& ang_vel_x, int16_t& ang_vel_y, int16_t& ang_vel_z, int16_t& lin_acc_x, int16_t& lin_acc_y, int16_t& lin_acc_z);
-  void usb_send_buffer(uint32_t timestamp_ms, int16_t steering_angle, int16_t steering_angle_velocity, int16_t speed, int16_t acceleration, int16_t jerk);
+  void usb_send_buffer(uint32_t timestamp_ms, float steering_angle, float steering_angle_velocity, float speed, float acceleration, float jerk);
 };
 
 #endif // USB_HPP

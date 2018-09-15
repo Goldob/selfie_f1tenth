@@ -17,7 +17,6 @@ int main(int argc, char **argv)
   ros::Publisher imu_publisher = n.advertise<sensor_msgs::Imu>("imu", 100);
   ros::Publisher velo_publisher = n.advertise<std_msgs::Float32>("speed", 50);
   ros::Publisher dis_publisher = n.advertise<std_msgs::Float32>("distance",50);
-  ros::Publisher yaw_publisher = n.advertise<std_msgs::Float32>("yaw",50);
 
   ros::Subscriber ackerman_subscriber = n.subscribe("drive", 1, ackermanCallback);
 
@@ -77,15 +76,10 @@ int main(int argc, char **argv)
     std_msgs::Float32 dis_msg;
     dis_msg.data = (float)(distance);
 
-    //send yaw to msg
-    std_msgs::Float32 yaw_msg;
-    yaw_msg.data = (float)(yaw/65535.f*360.f);
-
     //publishing msg
     imu_publisher.publish(imu_msg);
     velo_publisher.publish(velo_msg);
     dis_publisher.publish(dis_msg);
-    yaw_publisher.publish(yaw_msg);
     
     ros::spinOnce();
   }
@@ -93,9 +87,9 @@ int main(int argc, char **argv)
 
 void ackermanCallback(const ackermann_msgs::AckermannDrive::ConstPtr& msg)
 {
-  Usb.control.steering_angle = (int16_t)msg->steering_angle;
-  Usb.control.steering_angle_velocity = (int16_t)msg->steering_angle_velocity;
-  Usb.control.speed = (int16_t)msg->speed;
-  Usb.control.acceleration = (int16_t)msg->acceleration;
-  Usb.control.jerk = (int16_t)msg->jerk;
+  Usb.control.steering_angle = msg->steering_angle;
+  Usb.control.steering_angle_velocity = msg->steering_angle_velocity;
+  Usb.control.speed = msg->speed;
+  Usb.control.acceleration = msg->acceleration;
+  Usb.control.jerk = msg->jerk;
 }

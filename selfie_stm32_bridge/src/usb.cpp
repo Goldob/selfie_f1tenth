@@ -94,6 +94,7 @@ void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp,int32_t& distanc
   if (read_state == USB_RECEIVE_SIZE && Data.frame.startbyte == control.commands.startbyte
       && Data.frame.code == control.commands.code && Data.frame.length == USB_RECEIVE_SIZE-4
       && Data.frame.endByte == control.commands.endbyte)
+
   {
     //timestamp
     timestamp = Data.frame.timecode;
@@ -121,7 +122,7 @@ void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp,int32_t& distanc
   }
 }
 
-void USB_STM::usb_send_buffer(uint32_t timestamp_ms, int16_t steering_angle, int16_t steering_angle_velocity, int16_t speed, int16_t acceleration, int16_t jerk)
+void USB_STM::usb_send_buffer(uint32_t timestamp_ms, float steering_angle, float steering_angle_velocity, float speed, float acceleration, float jerk)
 {
   struct UsbFrame_s
   {
@@ -139,7 +140,7 @@ void USB_STM::usb_send_buffer(uint32_t timestamp_ms, int16_t steering_angle, int
 
   union UsbFrame_u
   {
-    unsigned char bytes[14];
+    unsigned char bytes[USB_SEND_SIZE];
     struct UsbFrame_s frame;
   } Data;
 
@@ -147,11 +148,11 @@ void USB_STM::usb_send_buffer(uint32_t timestamp_ms, int16_t steering_angle, int
   Data.frame.code = control.commands.code;
   Data.frame.length = USB_SEND_SIZE - 4;
   Data.frame.timestamp_ms = timestamp_ms;
-  Data.frame.steering_angle = steering_angle;
-  Data.frame.steering_angle_velocity = steering_angle_velocity;
-  Data.frame.speed = speed;
-  Data.frame.acceleration = acceleration;
-  Data.frame.jerk = jerk;
+  Data.frame.steering_angle = (int16_t)(steering_angle*10000);
+  Data.frame.steering_angle_velocity = (int16_t)(steering_angle_velocity*10000);
+  Data.frame.speed = (int16_t)speed;
+  Data.frame.acceleration = (int16_t)acceleration;
+  Data.frame.jerk = (int16_t)jerk;
   Data.frame.endbyte = control.commands.endbyte;
   write(fd, &Data.bytes, USB_SEND_SIZE);
 }
