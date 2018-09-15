@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
     imu_msg.header.frame_id = "imu";
     imu_msg.header.stamp = ros::Time::now();
-
+ 
     imu_msg.orientation.x = (float)(quaternion_x/32767.f);
     imu_msg.orientation.y = (float)(quaternion_y/32767.f);
     imu_msg.orientation.z = (float)(quaternion_z/32767.f);

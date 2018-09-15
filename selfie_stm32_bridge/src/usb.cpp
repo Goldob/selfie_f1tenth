@@ -1,7 +1,7 @@
 #include "usb.hpp"
 
 #define USB_SEND_SIZE 18
-#define USB_RECEIVE_SIZE 30
+#define USB_RECEIVE_SIZE 36
 
 int USB_STM::init(int speed)
 {
@@ -73,10 +73,10 @@ void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp,int32_t& distanc
     uint8_t length;
 
     uint32_t timecode;
-    int32_t distance;
 
+    int32_t distance;
     int16_t velocity;
-    int16_t quaternion[4];
+    int16_t w,x,y,z;
     uint16_t yaw;
     int16_t rates[3];
     int16_t acc[3];
@@ -91,8 +91,8 @@ void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp,int32_t& distanc
 
   int read_state = read(fd, &Data.buffer[0], 512) ;
 
-  if (read_state == USB_SEND_SIZE && Data.frame.startbyte == control.commands.startbyte
-      && Data.frame.code == control.commands.code && Data.frame.length == USB_SEND_SIZE-4
+  if (read_state == USB_RECEIVE_SIZE && Data.frame.startbyte == control.commands.startbyte
+      && Data.frame.code == control.commands.code && Data.frame.length == USB_RECEIVE_SIZE-4
       && Data.frame.endByte == control.commands.endbyte)
   {
     //timestamp
@@ -105,10 +105,10 @@ void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp,int32_t& distanc
     velocity = Data.frame.velocity;
 
     //imu data
-    quaternion_x = Data.frame.quaternion[0];
-    quaternion_y = Data.frame.quaternion[1];
-    quaternion_z = Data.frame.quaternion[2];
-    quaternion_w = Data.frame.quaternion[3];
+    quaternion_x = Data.frame.x;
+    quaternion_y = Data.frame.y;
+    quaternion_z = Data.frame.z;
+    quaternion_w = Data.frame.w;
     yaw = Data.frame.yaw;
     ang_vel_x = Data.frame.rates[0];
     ang_vel_y = Data.frame.rates[1];
@@ -145,7 +145,7 @@ void USB_STM::usb_send_buffer(uint32_t timestamp_ms, int16_t steering_angle, int
 
   Data.frame.startbyte = control.commands.startbyte;
   Data.frame.code = control.commands.code;
-  Data.frame.length = USB_RECEIVE_SIZE - 4;
+  Data.frame.length = USB_SEND_SIZE - 4;
   Data.frame.timestamp_ms = timestamp_ms;
   Data.frame.steering_angle = steering_angle;
   Data.frame.steering_angle_velocity = steering_angle_velocity;
@@ -153,5 +153,5 @@ void USB_STM::usb_send_buffer(uint32_t timestamp_ms, int16_t steering_angle, int
   Data.frame.acceleration = acceleration;
   Data.frame.jerk = jerk;
   Data.frame.endbyte = control.commands.endbyte;
-  write(fd, &Data.bytes, USB_RECEIVE_SIZE);
+  write(fd, &Data.bytes, USB_SEND_SIZE);
 }

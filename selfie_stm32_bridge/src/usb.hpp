@@ -24,6 +24,7 @@ struct usb_command
 {
   const uint8_t startbyte = 0xFF;
   const uint8_t data_enable = 0x01;
+  const uint8_t data_disable = 0x02;
   const uint8_t recalibration = 0x10;
   const uint8_t idle = 0x20;
   const uint8_t ready = 0x30;
