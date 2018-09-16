@@ -150,9 +150,9 @@ void USB_STM::usb_send_buffer(uint32_t timestamp_ms, float steering_angle, float
   Data.frame.timestamp_ms = timestamp_ms;
   Data.frame.steering_angle = (int16_t)(steering_angle*10000);
   Data.frame.steering_angle_velocity = (int16_t)(steering_angle_velocity*10000);
-  Data.frame.speed = (int16_t)speed;
-  Data.frame.acceleration = (int16_t)acceleration;
-  Data.frame.jerk = (int16_t)jerk;
+  Data.frame.speed = (int16_t)speed*1000;
+  Data.frame.acceleration = (int16_t)acceleration*1000;
+  Data.frame.jerk = (int16_t)jerk*1000;
   Data.frame.endbyte = control.commands.endbyte;
   write(fd, &Data.bytes, USB_SEND_SIZE);
 }

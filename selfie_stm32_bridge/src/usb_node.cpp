@@ -70,11 +70,11 @@ int main(int argc, char **argv)
 
     //send velocity to msg
     std_msgs::Float32 velo_msg;
-    velo_msg.data = (float)(velocity);
+    velo_msg.data = (float)(velocity/1000);
 
     //send distance to msg
     std_msgs::Float32 dis_msg;
-    dis_msg.data = (float)(distance);
+    dis_msg.data = (float)(distance/1000);
 
     //publishing msg
     imu_publisher.publish(imu_msg);
