@@ -1,5 +1,7 @@
 #include "usb.hpp"
 
+#define USB_SEND_SIZE 18
+#define USB_RECEIVE_SIZE 36
 
 int USB_STM::init(int speed)
 {
@@ -54,10 +56,14 @@ int USB_STM::init(int speed)
     std::cout << "Error while setting attributes!" << std::endl;
     return -3;
   }
+
+  unsigned char data_enable[3] = {command.startbyte, command.data_enable, command.endbyte};
+  write(fd, data_enable, 3);
+
   return 1;
 }
 
-void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp, float& velocity, float& quaternion_x, float& quaternion_y, float& quaternion_z, float& quaternion_w, float& ang_vel_x, float& ang_vel_y, float& ang_vel_z, float& lin_acc_x, float& lin_acc_y, float& lin_acc_z, uint8_t& taranis_3_pos, uint8_t& taranis_reset_gear, uint8_t& stm_reset)
+void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp,int32_t& distance, int16_t& velocity, int16_t& quaternion_x, int16_t& quaternion_y, int16_t& quaternion_z, int16_t& quaternion_w, uint16_t yaw, int16_t& ang_vel_x, int16_t& ang_vel_y, int16_t& ang_vel_z, int16_t& lin_acc_x, int16_t& lin_acc_y, int16_t& lin_acc_z)
 {
 
   struct UsbFrame_s
@@ -67,14 +73,14 @@ void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp, float& velocity
     uint8_t length;
 
     uint32_t timecode;
-    float velocity;
-    float quaternion[4];
-    float rates[3];
-    float acc[3];
 
-    uint8_t taranis_C;
-    uint8_t taranis_F;
-    uint8_t vision_res;
+    int32_t distance;
+    int16_t velocity;
+    int16_t w,x,y,z;
+    uint16_t yaw;
+    int16_t rates[3];
+    int16_t acc[3];
+
     uint8_t endByte;
   } __attribute__((__packed__));
   union UsbFrame_u
@@ -85,21 +91,26 @@ void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp, float& velocity
 
   int read_state = read(fd, &Data.buffer[0], 512) ;
 
-  if (read_state == 55 && Data.frame.startbyte == 0xff
-      && Data.frame.code == 0x40 && Data.frame.length == 51
-      && Data.frame.endByte == 0xfe)
+  if (read_state == USB_RECEIVE_SIZE && Data.frame.startbyte == control.commands.startbyte
+      && Data.frame.code == control.commands.code && Data.frame.length == USB_RECEIVE_SIZE-4
+      && Data.frame.endByte == control.commands.endbyte)
+
   {
     //timestamp
     timestamp = Data.frame.timecode;
+
+    //distance from encoders
+    distance = Data.frame.distance;
 
     //car velocity
     velocity = Data.frame.velocity;
 
     //imu data
-    quaternion_x = Data.frame.quaternion[0];
-    quaternion_y = Data.frame.quaternion[1];
-    quaternion_z = Data.frame.quaternion[2];
-    quaternion_w = Data.frame.quaternion[3];
+    quaternion_x = Data.frame.x;
+    quaternion_y = Data.frame.y;
+    quaternion_z = Data.frame.z;
+    quaternion_w = Data.frame.w;
+    yaw = Data.frame.yaw;
     ang_vel_x = Data.frame.rates[0];
     ang_vel_y = Data.frame.rates[1];
     ang_vel_z = Data.frame.rates[2];
@@ -107,54 +118,41 @@ void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp, float& velocity
     lin_acc_y = Data.frame.acc[1];
     lin_acc_z = Data.frame.acc[2];
 
-    taranis_3_pos = Data.frame.taranis_C;
-    taranis_reset_gear = Data.frame.taranis_F;
-    stm_reset = Data.frame.vision_res;
-    ROS_INFO("Bytes: %d Time: %u Gz: %.3f VeloZ: %.3f", read_state, timestamp, lin_acc_z, ang_vel_z);
+    //ROS_INFO("Bytes: %d Time: %u Distance: %.3f Yaw: %.3f", read_state, timestamp, distance, yaw);
   }
 }
 
-void USB_STM::usb_send_buffer(uint32_t timestamp_ms, float steering_angle, float steering_angle_velocity, float speed, float acceleration, float jerk, uint8_t flag1, uint8_t flag2, uint8_t flag3)
+void USB_STM::usb_send_buffer(uint32_t timestamp_ms, float steering_angle, float steering_angle_velocity, float speed, float acceleration, float jerk)
 {
-
   struct UsbFrame_s
   {
     uint8_t startbyte;
     uint8_t code;
     uint8_t length;
-    uint32_t timestamp_ms;
-    float steering_angle;
-    float steering_angle_velocity;
-    float speed;
-    float acceleration;
-    float jerk;
-    uint8_t flag1;
-    uint8_t flag2;
-    uint8_t flag3;
+    uint32_t timestamp_ms; 
+    int16_t steering_angle;
+	  int16_t steering_angle_velocity;
+	  int16_t speed;
+	  int16_t acceleration;
+	  int16_t jerk;
     uint8_t endbyte;
   } __attribute__((__packed__));
+
   union UsbFrame_u
   {
-    unsigned char bytes[31];
+    unsigned char bytes[USB_SEND_SIZE];
     struct UsbFrame_s frame;
   } Data;
-  Data.frame.startbyte = control.commands.start;
+
+  Data.frame.startbyte = control.commands.startbyte;
   Data.frame.code = control.commands.code;
-  Data.frame.length = control.commands.length;
+  Data.frame.length = USB_SEND_SIZE - 4;
   Data.frame.timestamp_ms = timestamp_ms;
-  Data.frame.steering_angle = steering_angle;
-  Data.frame.steering_angle_velocity = steering_angle_velocity;
-  Data.frame.speed = speed;
-  Data.frame.acceleration = acceleration;
-  Data.frame.jerk = jerk;
-  Data.frame.flag1 = flag1;
-  Data.frame.flag2 = flag2;
-  Data.frame.flag3 = flag3;
-  Data.frame.endbyte = control.commands.stop;
-  write(fd, &Data.bytes, 31);
+  Data.frame.steering_angle = (int16_t)(steering_angle*10000);
+  Data.frame.steering_angle_velocity = (int16_t)(steering_angle_velocity*10000);
+  Data.frame.speed = (int16_t)speed*1000;
+  Data.frame.acceleration = (int16_t)acceleration*1000;
+  Data.frame.jerk = (int16_t)jerk*1000;
+  Data.frame.endbyte = control.commands.endbyte;
+  write(fd, &Data.bytes, USB_SEND_SIZE);
 }
-
-
-
-
-
