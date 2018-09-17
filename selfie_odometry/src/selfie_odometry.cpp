@@ -29,6 +29,8 @@ ros::Time current_time, last_time;
 ros::Publisher odom_pub;
 geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(yaw);
 
+std::string rear_axis_frame;
+
 void distanceCallback(const std_msgs::Float32 &msg)
 {
   current_time = ros::Time::now();
@@ -49,7 +51,7 @@ void distanceCallback(const std_msgs::Float32 &msg)
   // publish the odometry message over ROS
   nav_msgs::Odometry odom;
   odom.header.stamp = current_time;
-  odom.header.frame_id = "base_frame";
+  odom.header.frame_id = "odom";
 
   // set the position
   odom.pose.pose.position.x = x;
@@ -58,7 +60,7 @@ void distanceCallback(const std_msgs::Float32 &msg)
   odom.pose.pose.orientation = odom_quat;
 
   // set the velocity
-  odom.child_frame_id = "rear_axis_frame";
+  odom.child_frame_id = rear_axis_frame;
   odom.twist.twist.linear.x = vx;
   odom.twist.twist.linear.y = vy;
   odom.twist.twist.angular.z = vyaw;
@@ -92,12 +94,13 @@ int main(int argc, char** argv)
 
   ros::init(argc, argv, "selfie_odometry");
 
-  ros::NodeHandle n;
+  ros::NodeHandle n("~");
 
-  odom_pub = n.advertise<nav_msgs::Odometry>("odom", 50);
-  ros::Subscriber sub_distance = n.subscribe("distance", 50, distanceCallback);
-  ros::Subscriber sub_imu = n.subscribe("imu", 50, imuCallback);
+  odom_pub = n.advertise<nav_msgs::Odometry>("/odom", 50);
+  ros::Subscriber sub_distance = n.subscribe("/distance", 50, distanceCallback);
+  ros::Subscriber sub_imu = n.subscribe("/imu", 50, imuCallback);
 
+  rear_axis_frame = n.param<std::string>("rear_axis_frame", "base_link");
   tf::TransformBroadcaster odom_broadcaster;
 
   current_time = ros::Time::now();
@@ -114,8 +117,8 @@ int main(int argc, char** argv)
     // publish the transform over tf
     geometry_msgs::TransformStamped odom_trans;
     odom_trans.header.stamp = current_time;
-    odom_trans.header.frame_id = "base_frame";
-    odom_trans.child_frame_id = "rear_axis_frame";
+    odom_trans.header.frame_id = "odom";
+    odom_trans.child_frame_id = rear_axis_frame;
 
     odom_trans.transform.translation.x = x;
     odom_trans.transform.translation.y = y;
