@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="urg_node" type="urg_node" name="lidar"/>
+    <node pkg="selfie_stm32_bridge" type="selfie_stm32_bridge" name="stm32"/>
+</launch>
