@@ -83,7 +83,7 @@ void imuCallback(const sensor_msgs::Imu &msg)
     msg.orientation.w);
 
   tf::Matrix3x3 m(q);
-  m.getRPY(yaw, pitch, roll);
+  m.getRPY(roll, pitch, yaw);
 
   // quaternion created from yaw
   odom_quat = tf::createQuaternionMsgFromYaw(yaw);
