@@ -8,24 +8,18 @@ int USB_STM::init(int speed)
   char port[] = "/dev/serial/by-id/usb-KNR_Selfie_F7_00000000001A-if00";
   fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
   if (fd < 0)
-    std::cout << "Could not open serial communication on port: " << port << std::endl;
+    ROS_ERROR("Could not open serial communication on port with stm!");
   else
   {
     std::cout << "Opened serial communication on port: " << port << std::endl;
     std::cout << "File descriptor: " << fd << std::endl;
   }
 
-  if (fd < 0)
-  {
-    std::cout << "Could not open any USB port" << std::endl;
-    return -1;
-  }
-
   // Get attributes of transmission
   struct termios tty;
   if (tcgetattr(fd, &tty) < 0)
   {
-    std::cout << "Error while getting attributes!" << std::endl;
+    ROS_ERROR("Error while getting attributes!");
     return -2;
   }
 
@@ -53,7 +47,7 @@ int USB_STM::init(int speed)
   // Set new parameters of transmission
   if (tcsetattr(fd, TCSANOW, &tty) != 0)
   {
-    std::cout << "Error while setting attributes!" << std::endl;
+    ROS_ERROR("Error while setting attributes!");
     return -3;
   }
 
@@ -117,6 +111,9 @@ void USB_STM::usb_read_buffer(int buf_size, uint32_t& timestamp, int32_t& distan
     lin_acc_x = Data.frame.acc[0];
     lin_acc_y = Data.frame.acc[1];
     lin_acc_z = Data.frame.acc[2];
+  }
+  else{
+    ROS_ERROR("No data from STM!");
   }
 }
 
