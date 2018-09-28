@@ -6,28 +6,45 @@ import tf_conversions
 import math
 import sys
 import pickle
+import numpy as np
 
-from scipy import interpolate
+from scipy.interpolate import RegularGridInterpolator
 from std_msgs.msg import Float64
+from dynamic_reconfigure.server import Server
+from selfie_map_processing.cfg import MapProcessingConfig
 
 UPDATE_RATE = 50
 
 def generate_interpolation(lookup_table, resolution, origin):
-    x = []
-    y = []
-    z = []
-    for ix in range(lookup_table.shape[1]):
-        for iy in range(lookup_table.shape[0]):
-            x.append(ix*resolution + map_data['origin'][0])
-            y.append((lookup_table.shape[0] - iy - 1)*resolution + map_data['origin'][1])
-            z.append(lookup_table[iy, ix])
+    dim_x = lookup_table.shape[1] * resolution
+    dim_y = lookup_table.shape[0] * resolution
 
-    return interpolate.interp2d(x, y, z)
+    start_x = map_data['origin'][0]
+    start_y = map_data['origin'][1]
+
+    stop_x = start_x + dim_x
+    stop_y = start_y + dim_y
+
+    x = np.linspace(start_x, stop_x, dim_x/resolution, endpoint=False)
+    y = np.linspace(start_y, stop_y, dim_y/resolution, endpoint=False)
+
+    # Account for y direction being inverted in images
+    lookup_table = np.flipud(lookup_table)
+
+    return RegularGridInterpolator((y, x), lookup_table)
+
+def config_callback(config, level):
+    global L
+    L = config['L']
+
+    rospy.loginfo("Reconfigure request: L=" + str(L) + "m")
+
+    return config
 
 if __name__ == '__main__':
     rospy.init_node('selfie_offset_publisher')
 
-    L = 0.5 # TODO Set as parameter
+    srv = Server(MapProcessingConfig, config_callback)
 
     # Read output of map preprocessing
     filename = sys.argv[1]
@@ -41,6 +58,8 @@ if __name__ == '__main__':
     eval_direction = generate_interpolation(map_data['directions'],
                                             map_data['resolution'],
                                             map_data['origin'])
+
+    rospy.loginfo('Map data loaded')
 
     # Announce topic publisher
     offset_pub = rospy.Publisher('steering_state', Float64, queue_size=UPDATE_RATE)
@@ -73,8 +92,8 @@ if __name__ == '__main__':
 
         euler = tf_conversions.transformations.euler_from_quaternion(quaternion)
 
-        offset = eval_offset(x, y)
-        path_direction = eval_direction(x, y)
+        offset = eval_offset([y, x])[0]
+        path_direction = eval_direction([y, x])[0]
 
         theta = path_direction - euler[2]
 

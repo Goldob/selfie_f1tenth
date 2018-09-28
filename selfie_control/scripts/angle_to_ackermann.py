@@ -4,6 +4,8 @@ import rospy
 
 from std_msgs.msg import Float64
 from ackermann_msgs.msg import AckermannDriveStamped
+from dynamic_reconfigure.server import Server
+from selfie_control.cfg import ControlConfig
 
 UPDATE_RATE = 50
 
@@ -15,11 +17,18 @@ def steering_angle_callback(msg):
 
     drive_pub.publish(cmd)
 
+def config_callback(config, level):
+    global speed
+    speed = config['speed']
+
+    rospy.loginfo("Reconfigure request: speed=" + str(speed) + "m/s")
+
+    return config
+
 if __name__ == '__main__':
     rospy.init_node('selfie_angle_to_ackermann')
 
-    global speed
-    speed = rospy.get_param('~speed', 0.5)
+    srv = Server(ControlConfig, config_callback)
 
     global drive_pub
     drive_pub = rospy.Publisher('drive', AckermannDriveStamped, queue_size=1)
